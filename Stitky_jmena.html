@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Štítky se jménem – A4</title>
+<style>
+  :root {
+    --cols: 3;
+    --rows: 8;
+    --font: 28;
+    --family: "Segoe UI", Arial, sans-serif;
+    --margin: 10mm;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #eceef1;
+    color: #1b1f24;
+  }
+
+  /* --- Ovládací panel (netiskne se) --- */
+  .controls {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+    padding: 16px 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #d6dae0;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 12px; font-weight: 600; color: #5a626c; }
+  .field input {
+    padding: 8px 10px;
+    font-size: 15px;
+    border: 1px solid #c2c8d0;
+    border-radius: 6px;
+    width: 160px;
+  }
+  .field input[type=number] { width: 90px; }
+  .field select {
+    padding: 8px 10px;
+    font-size: 15px;
+    border: 1px solid #c2c8d0;
+    border-radius: 6px;
+    width: 190px;
+    background: #fff;
+  }
+
+  .btn {
+    padding: 9px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    background: #2563eb;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .btn:hover { background: #1d4ed8; }
+
+  .btn.secondary { background: #6b7280; }
+  .btn.secondary:hover { background: #4b5563; }
+
+  .hint { font-size: 12px; color: #7a828c; width: 100%; margin: 0; }
+
+  /* --- Náhled stránky --- */
+  .preview-wrap { padding: 24px; display: flex; justify-content: center; }
+
+  .page {
+    width: 210mm;
+    height: 297mm;
+    padding: var(--margin);
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0,0,0,.15);
+  }
+
+  .sheet { position: relative; width: 100%; height: 100%; }
+
+  .grid {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(var(--cols), 1fr);
+    grid-auto-rows: 1fr;
+  }
+
+  /* SVG vrstva se soutiskovými křížky v průsečících mřížky */
+  .crops {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .crops line { stroke: #000; stroke-width: 0.6; shape-rendering: crispEdges; }
+
+  .cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4mm;
+    font-size: calc(var(--font) * 1pt);
+    font-family: var(--family);
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: nowrap;       /* jméno vždy na jednom řádku */
+    overflow: hidden;
+  }
+
+  /* --- Tisk --- */
+  @page { size: A4; margin: 0; }
+
+  @media print {
+    body { background: #fff; }
+    .controls, .preview-wrap > .note { display: none !important; }
+    .preview-wrap { padding: 0; }
+    .page { box-shadow: none; width: 210mm; height: 297mm; }
+    .cell { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="controls">
+    <div class="field">
+      <label for="name">Jméno</label>
+      <input id="name" type="text" value="Mária" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="rows">Počet řádků</label>
+      <input id="rows" type="number" min="1" max="30" value="8">
+    </div>
+    <div class="field">
+      <label for="font">Max. velikost písma (pt)</label>
+      <input id="font" type="number" min="8" max="120" value="40">
+    </div>
+    <div class="field">
+      <label for="family">Písmo</label>
+      <select id="family">
+        <option value='"Segoe UI", Arial, sans-serif'>Segoe UI</option>
+        <option value="Arial, sans-serif">Arial</option>
+        <option value="Calibri, sans-serif">Calibri</option>
+        <option value="Tahoma, sans-serif">Tahoma</option>
+        <option value="Verdana, sans-serif">Verdana</option>
+        <option value='"Trebuchet MS", sans-serif'>Trebuchet MS</option>
+        <option value='"Times New Roman", serif'>Times New Roman</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value='"Cambria", serif'>Cambria</option>
+        <option value='"Courier New", monospace'>Courier New</option>
+        <option value='"Comic Sans MS", cursive'>Comic Sans MS</option>
+      </select>
+    </div>
+    <button class="btn" onclick="window.print()">Tisk / Uložit PDF</button>
+    <button class="btn secondary" id="reset">Reset na výchozí</button>
+    <p class="hint">Sloupce jsou napevno 3. Jméno je vždy na jednom řádku — pokud se nevejde, písmo se automaticky zmenší. „Max. velikost“ je horní hranice, na kterou písmo naroste, když je místa dost. Čárkované rámečky slouží pro stříhání. Tlačítkem otevřeš tisk — vyber „Uložit jako PDF“.</p>
+  </div>
+
+  <div class="preview-wrap">
+    <div class="page">
+      <div class="sheet">
+        <div class="grid" id="grid"></div>
+        <svg class="crops" id="crops" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const nameEl   = document.getElementById('name');
+  const rowsEl   = document.getElementById('rows');
+  const fontEl   = document.getElementById('font');
+  const familyEl = document.getElementById('family');
+  const resetEl  = document.getElementById('reset');
+  const grid     = document.getElementById('grid');
+  const crops    = document.getElementById('crops');
+  const root     = document.documentElement;
+  const COLS     = 3;
+  const SVGNS    = 'http://www.w3.org/2000/svg';
+
+  const PT_TO_PX = 96 / 72;
+  const STORAGE_KEY = 'stitky_jmena_settings';
+  const DEFAULTS = { name: 'Mária', rows: '8', font: '40', family: '"Segoe UI", Arial, sans-serif' };
+
+  // --- Ukládání / načítání nastavení do localStorage ---
+  function saveSettings() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        name:   nameEl.value,
+        rows:   rowsEl.value,
+        font:   fontEl.value,
+        family: familyEl.value
+      }));
+    } catch (e) { /* localStorage nemusí být dostupné (private mód apod.) */ }
+  }
+
+  function loadSettings() {
+    try {
+      const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (s.name   !== undefined) nameEl.value   = s.name;
+      if (s.rows   !== undefined) rowsEl.value   = s.rows;
+      if (s.font   !== undefined) fontEl.value   = s.font;
+      if (s.family !== undefined) familyEl.value = s.family;
+    } catch (e) { /* ignoruj poškozená data */ }
+  }
+
+  // Najde největší velikost písma (≤ max), při které se jméno vejde na jeden řádek.
+  function fitFontPt(maxPt, family) {
+    const sample = grid.querySelector('.cell');
+    const name = (nameEl.value || '').trim();
+    if (!sample || !name) return maxPt;
+
+    const cs = getComputedStyle(sample);
+    const avail = sample.clientWidth
+      - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2; // 2px rezerva
+
+    const ctx = (fitFontPt._ctx ||= document.createElement('canvas').getContext('2d'));
+    let lo = 6, hi = maxPt, best = 6;
+    for (let i = 0; i < 24; i++) {
+      const mid = (lo + hi) / 2;
+      ctx.font = `700 ${mid * PT_TO_PX}px ${family}`;
+      if (ctx.measureText(name).width <= avail) { best = mid; lo = mid; }
+      else { hi = mid; }
+    }
+    return best;
+  }
+
+  // Vykreslí soutiskové křížky do každého průsečíku mřížky (rohy buněk).
+  function renderCrops(rows) {
+    const W = grid.clientWidth, H = grid.clientHeight;
+    if (!W || !H) return;
+    const arm = 5.5;  // délka ramene křížku v px (≈ 1,5 mm)
+
+    crops.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    crops.setAttribute('preserveAspectRatio', 'none');
+
+    let svg = '';
+    for (let c = 0; c <= COLS; c++) {
+      const x = W * c / COLS;
+      for (let r = 0; r <= rows; r++) {
+        const y = H * r / rows;
+        svg += `<line x1="${x-arm}" y1="${y}" x2="${x+arm}" y2="${y}"/>`;
+        svg += `<line x1="${x}" y1="${y-arm}" x2="${x}" y2="${y+arm}"/>`;
+      }
+    }
+    crops.innerHTML = svg;
+  }
+
+  function render() {
+    const name   = nameEl.value || '';
+    const rows   = Math.max(1, Math.min(30, parseInt(rowsEl.value) || 1));
+    const maxF   = Math.max(8, Math.min(120, parseInt(fontEl.value) || 40));
+    const family = familyEl.value;
+
+    root.style.setProperty('--rows', rows);
+    root.style.setProperty('--family', family);
+
+    const total = rows * COLS;
+    grid.innerHTML = '';
+    for (let i = 0; i < total; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.textContent = name;
+      grid.appendChild(cell);
+    }
+
+    // Po vykreslení dopočítej a aplikuj velikost písma na jeden řádek.
+    root.style.setProperty('--font', fitFontPt(maxF, family).toFixed(2));
+
+    // Soutiskové křížky v rozích.
+    renderCrops(rows);
+  }
+
+  // Překreslí a zároveň uloží aktuální nastavení.
+  function update() { render(); saveSettings(); }
+
+  // Obnoví výchozí hodnoty a smaže uložené nastavení.
+  function resetSettings() {
+    nameEl.value   = DEFAULTS.name;
+    rowsEl.value   = DEFAULTS.rows;
+    fontEl.value   = DEFAULTS.font;
+    familyEl.value = DEFAULTS.family;
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    render();
+  }
+
+  nameEl.addEventListener('input', update);
+  rowsEl.addEventListener('input', update);
+  fontEl.addEventListener('input', update);
+  familyEl.addEventListener('change', update);
+  resetEl.addEventListener('click', resetSettings);
+  window.addEventListener('resize', render);
+  window.addEventListener('beforeprint', render);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+
+  loadSettings();   // obnov uložené hodnoty
+  render();         // vykresli (bez zbytečného přepisu úložiště)
+</script>
+
+</body>
+</html>
