@@ -47,6 +47,7 @@
     width: 160px;
   }
   .field input[type=number] { width: 90px; }
+  #name { width: 360px; }
   .field select {
     padding: 8px 10px;
     font-size: 15px;
@@ -68,8 +69,18 @@
   }
   .btn:hover { background: #1d4ed8; }
 
-  .btn.secondary { background: #6b7280; }
-  .btn.secondary:hover { background: #4b5563; }
+  .reset-link {
+    margin-left: auto;
+    align-self: center;
+    padding: 0;
+    font-size: 12px;
+    color: #7a828c;
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .reset-link:hover { color: #4b5563; }
 
   .hint { font-size: 12px; color: #7a828c; width: 100%; margin: 0; }
 
@@ -135,8 +146,8 @@
 
   <div class="controls">
     <div class="field">
-      <label for="name">Jméno</label>
-      <input id="name" type="text" value="Mária" autocomplete="off">
+      <label for="name">Jméno (dvě oddělte ;)</label>
+      <input id="name" type="text" value="Mária" autocomplete="off" placeholder="Mária  nebo  Mária;Karel">
     </div>
     <div class="field">
       <label for="rows">Počet řádků</label>
@@ -145,6 +156,14 @@
     <div class="field">
       <label for="font">Max. velikost písma (pt)</label>
       <input id="font" type="number" min="8" max="120" value="40">
+    </div>
+    <div class="field">
+      <label for="indent1">Odsazení 1. jména (mm)</label>
+      <input id="indent1" type="number" min="0" max="60" step="1" value="0">
+    </div>
+    <div class="field">
+      <label for="indent2">Odsazení 2. jména (mm)</label>
+      <input id="indent2" type="number" min="0" max="60" step="1" value="0">
     </div>
     <div class="field">
       <label for="family">Písmo</label>
@@ -163,8 +182,8 @@
       </select>
     </div>
     <button class="btn" onclick="window.print()">Tisk / Uložit PDF</button>
-    <button class="btn secondary" id="reset">Reset na výchozí</button>
-    <p class="hint">Sloupce jsou napevno 3. Jméno je vždy na jednom řádku — pokud se nevejde, písmo se automaticky zmenší. „Max. velikost“ je horní hranice, na kterou písmo naroste, když je místa dost. Čárkované rámečky slouží pro stříhání. Tlačítkem otevřeš tisk — vyber „Uložit jako PDF“.</p>
+    <button type="button" class="reset-link" id="reset">Reset na výchozí</button>
+    <p class="hint">Můžeš zadat i dvě jména oddělená středníkem (např. „Mária;Karel“) — horní polovina řádků se vyplní prvním, spodní druhým. Sloupce jsou napevno 3. Jméno je vždy na jednom řádku — pokud se nevejde, písmo se automaticky zmenší. „Max. velikost“ je horní hranice, na kterou písmo naroste, když je místa dost. Čárkované rámečky slouží pro stříhání. Tlačítkem otevřeš tisk — vyber „Uložit jako PDF“.</p>
   </div>
 
   <div class="preview-wrap">
@@ -180,6 +199,8 @@
   const nameEl   = document.getElementById('name');
   const rowsEl   = document.getElementById('rows');
   const fontEl   = document.getElementById('font');
+  const indent1El = document.getElementById('indent1');
+  const indent2El = document.getElementById('indent2');
   const familyEl = document.getElementById('family');
   const resetEl  = document.getElementById('reset');
   const grid     = document.getElementById('grid');
@@ -189,17 +210,20 @@
   const SVGNS    = 'http://www.w3.org/2000/svg';
 
   const PT_TO_PX = 96 / 72;
+  const MM_TO_PX = 96 / 25.4;
   const STORAGE_KEY = 'stitky_jmena_settings';
-  const DEFAULTS = { name: 'Mária', rows: '8', font: '40', family: '"Segoe UI", Arial, sans-serif' };
+  const DEFAULTS = { name: 'Mária', rows: '8', font: '40', indent1: '0', indent2: '0', family: '"Segoe UI", Arial, sans-serif' };
 
   // --- Ukládání / načítání nastavení do localStorage ---
   function saveSettings() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        name:   nameEl.value,
-        rows:   rowsEl.value,
-        font:   fontEl.value,
-        family: familyEl.value
+        name:    nameEl.value,
+        rows:    rowsEl.value,
+        font:    fontEl.value,
+        indent1: indent1El.value,
+        indent2: indent2El.value,
+        family:  familyEl.value
       }));
     } catch (e) { /* localStorage nemusí být dostupné (private mód apod.) */ }
   }
@@ -207,32 +231,57 @@
   function loadSettings() {
     try {
       const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-      if (s.name   !== undefined) nameEl.value   = s.name;
-      if (s.rows   !== undefined) rowsEl.value   = s.rows;
-      if (s.font   !== undefined) fontEl.value   = s.font;
-      if (s.family !== undefined) familyEl.value = s.family;
+      if (s.name    !== undefined) nameEl.value    = s.name;
+      if (s.rows    !== undefined) rowsEl.value    = s.rows;
+      if (s.font    !== undefined) fontEl.value    = s.font;
+      if (s.indent1 !== undefined) indent1El.value = s.indent1;
+      if (s.indent2 !== undefined) indent2El.value = s.indent2;
+      if (s.family  !== undefined) familyEl.value  = s.family;
     } catch (e) { /* ignoruj poškozená data */ }
   }
 
-  // Najde největší velikost písma (≤ max), při které se jméno vejde na jeden řádek.
+  // Rozdělí obsah pole na jména podle ";". Vrátí pole 1–2 neprázdných jmen.
+  function parseNames() {
+    return (nameEl.value || '')
+      .split(';')
+      .map(s => s.trim())
+      .filter(s => s.length > 0)
+      .slice(0, 2);
+  }
+
+  // Vrátí odsazení zleva (mm) pro 1. a 2. jméno; ořízne na rozsah 0–60.
+  function getIndents() {
+    const clamp = v => Math.max(0, Math.min(60, parseFloat(v) || 0));
+    return [clamp(indent1El.value), clamp(indent2El.value)];
+  }
+
+  // Najde největší velikost písma (≤ max), při které se každé jméno vejde na jeden
+  // řádek i s vlastním odsazením. Vrací nejmenší velikost přes všechna jména.
   function fitFontPt(maxPt, family) {
     const sample = grid.querySelector('.cell');
-    const name = (nameEl.value || '').trim();
-    if (!sample || !name) return maxPt;
+    const names = parseNames();
+    if (!sample || !names.length) return maxPt;
 
     const cs = getComputedStyle(sample);
-    const avail = sample.clientWidth
-      - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2; // 2px rezerva
+    const padR = parseFloat(cs.paddingRight);   // základní vnitřní okraj (4mm)
+    const cellW = sample.clientWidth;
+    const indents = getIndents();
 
     const ctx = (fitFontPt._ctx ||= document.createElement('canvas').getContext('2d'));
-    let lo = 6, hi = maxPt, best = 6;
-    for (let i = 0; i < 24; i++) {
-      const mid = (lo + hi) / 2;
-      ctx.font = `700 ${mid * PT_TO_PX}px ${family}`;
-      if (ctx.measureText(name).width <= avail) { best = mid; lo = mid; }
-      else { hi = mid; }
-    }
-    return best;
+    let result = maxPt;
+    names.forEach((name, i) => {
+      // U odsazeného jména ubere odsazení z dostupné šířky.
+      const avail = cellW - padR - (indents[i] || 0) * MM_TO_PX - padR - 2;
+      let lo = 6, hi = maxPt, best = 6;
+      for (let k = 0; k < 24; k++) {
+        const mid = (lo + hi) / 2;
+        ctx.font = `700 ${mid * PT_TO_PX}px ${family}`;
+        if (ctx.measureText(name).width <= avail) { best = mid; lo = mid; }
+        else { hi = mid; }
+      }
+      if (best < result) result = best;
+    });
+    return result;
   }
 
   // Vykreslí soutiskové křížky do každého průsečíku mřížky (rohy buněk).
@@ -257,7 +306,7 @@
   }
 
   function render() {
-    const name   = nameEl.value || '';
+    const names  = parseNames();
     const rows   = Math.max(1, Math.min(30, parseInt(rowsEl.value) || 1));
     const maxF   = Math.max(8, Math.min(120, parseInt(fontEl.value) || 40));
     const family = familyEl.value;
@@ -265,13 +314,28 @@
     root.style.setProperty('--rows', rows);
     root.style.setProperty('--family', family);
 
-    const total = rows * COLS;
+    // Při dvou jménech dostane první horní polovinu řádků, druhé spodní.
+    // Při jednom (nebo žádném) jméně se vyplní celá stránka.
+    const split = names.length >= 2 ? Math.ceil(rows / 2) : rows;
+    const indents = getIndents();
+
     grid.innerHTML = '';
-    for (let i = 0; i < total; i++) {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.textContent = name;
-      grid.appendChild(cell);
+    for (let r = 0; r < rows; r++) {
+      const idx    = (names.length >= 2 && r >= split) ? 1 : 0;
+      const name   = names.length === 0 ? '' : names[idx];
+      const indent = indents[idx] || 0;
+      for (let c = 0; c < COLS; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.textContent = name;
+        // Při odsazení zarovnej doleva a odtlač od levého okraje; jinak ponech vystředěné.
+        if (indent > 0) {
+          cell.style.justifyContent = 'flex-start';
+          cell.style.textAlign = 'left';
+          cell.style.paddingLeft = (4 + indent) + 'mm';
+        }
+        grid.appendChild(cell);
+      }
     }
 
     // Po vykreslení dopočítej a aplikuj velikost písma na jeden řádek.
@@ -286,10 +350,12 @@
 
   // Obnoví výchozí hodnoty a smaže uložené nastavení.
   function resetSettings() {
-    nameEl.value   = DEFAULTS.name;
-    rowsEl.value   = DEFAULTS.rows;
-    fontEl.value   = DEFAULTS.font;
-    familyEl.value = DEFAULTS.family;
+    nameEl.value    = DEFAULTS.name;
+    rowsEl.value    = DEFAULTS.rows;
+    fontEl.value    = DEFAULTS.font;
+    indent1El.value = DEFAULTS.indent1;
+    indent2El.value = DEFAULTS.indent2;
+    familyEl.value  = DEFAULTS.family;
     try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
     render();
   }
@@ -297,6 +363,8 @@
   nameEl.addEventListener('input', update);
   rowsEl.addEventListener('input', update);
   fontEl.addEventListener('input', update);
+  indent1El.addEventListener('input', update);
+  indent2El.addEventListener('input', update);
   familyEl.addEventListener('change', update);
   resetEl.addEventListener('click', resetSettings);
   window.addEventListener('resize', render);
