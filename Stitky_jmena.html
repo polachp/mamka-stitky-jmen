@@ -68,6 +68,9 @@
     cursor: pointer;
   }
   .btn:hover { background: #1d4ed8; }
+  a.btn { display: inline-block; text-decoration: none; }
+  .btn.alt { background: #6b7280; }
+  .btn.alt:hover { background: #4b5563; }
 
   .reset-link {
     margin-left: auto;
@@ -174,6 +177,7 @@
       </select>
     </div>
     <button class="btn" onclick="window.print()">Tisk / Uložit PDF</button>
+    <a class="btn alt" href="Jmena.html">Seznam jmen</a>
     <button type="button" class="reset-link" id="reset">Reset na výchozí</button>
     <p class="hint">Můžeš zadat i dvě jména oddělená středníkem (např. „Mária;Karel“) — horní polovina řádků se vyplní prvním, spodní druhým. Sloupce jsou napevno 3. Jméno je vždy na jednom řádku — pokud se nevejde, písmo se automaticky zmenší. „Max. velikost“ je horní hranice, na kterou písmo naroste, když je místa dost. Čárkované rámečky slouží pro stříhání. Tlačítkem otevřeš tisk — vyber „Uložit jako PDF“.</p>
   </div>

@@ -1,5 +1,10 @@
 # Projekt: Štítky se jmény (tisk na A4)
 
+## Pravidla práce
+
+- **Nikdy necommituj ani nepushuj do gitu bez výslovného příkazu uživatele.** Změny prováděj
+  jen v pracovních souborech; `git commit`/`git push` až na explicitní pokyn.
+
 Generátor štítků se jmény pro tisk na A4. Uživatel zadá jméno a aplikace vykreslí stránku
 rozdělenou do tří sloupců a zvoleného počtu řádků, kde každá buňka obsahuje totéž jméno.
 Stránka se tiskne (nebo ukládá jako PDF) a podle soutiskových křížků v rozích se rozstříhá

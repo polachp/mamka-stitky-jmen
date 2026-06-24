@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seznam jmen</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #eceef1;
+    color: #1b1f24;
+  }
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 20px;
+    background: #fff;
+    border-bottom: 1px solid #d6dae0;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  h1 { font-size: 18px; margin: 0; }
+
+  .btn {
+    padding: 9px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    background: #6b7280;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn:hover { background: #4b5563; }
+
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .bar .field:first-of-type { margin-left: auto; }
+  .field label { font-size: 12px; font-weight: 600; color: #5a626c; }
+  .field select {
+    padding: 8px 10px;
+    font-size: 15px;
+    border: 1px solid #c2c8d0;
+    border-radius: 6px;
+    background: #fff;
+  }
+
+  .wrap { padding: 24px; max-width: 560px; margin: 0 auto; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #eef0f3; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: #5a626c; background: #f7f8fa; }
+  td.rank, td.count, th.rank, th.count { text-align: right; color: #6b7280; font-variant-numeric: tabular-nums; }
+  td.name { font-weight: 600; font-size: 16px; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #f3f6ff; }
+  .src { font-size: 12px; color: #7a828c; margin: 14px 2px 0; }
+</style>
+</head>
+<body>
+  <div class="bar">
+    <a class="btn" href="Stitky_jmena.html">← Zpět na štítky</a>
+    <h1>Nejčetnější slovenská jména (30 + 30)</h1>
+    <div class="field">
+      <label for="sex">Pohlaví</label>
+      <select id="sex">
+        <option value="all">Všichni</option>
+        <option value="m">Muži</option>
+        <option value="z">Ženy</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="sort">Řazení</label>
+      <select id="sort">
+        <option value="freq">Podle četnosti</option>
+        <option value="abc">Podle abecedy</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <table>
+      <thead>
+        <tr><th class="rank">#</th><th>Jméno</th><th class="count">Nositelů</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <p class="src">30 nejčetnějších mužských a 30 ženských jmen (zdroj forebears.io). „#“ je vždy pořadí podle počtu nositelů v rámci tohoto seznamu, i při řazení dle abecedy. Diakritické duplikáty („Maria“, „Jan“) vynechány.</p>
+  </div>
+
+<script>
+  // Žebříček podle počtu nositelů (rank = pořadí dle četnosti).
+  const NAMES = [
+    { name: "Mária", count: 344993, sex: "z" }, { name: "Ján", count: 281105, sex: "m" },
+    { name: "Anna", count: 275659, sex: "z" }, { name: "Jozef", count: 261908, sex: "m" },
+    { name: "Štefan", count: 129872, sex: "m" }, { name: "Peter", count: 129632, sex: "m" },
+    { name: "Helena", count: 101735, sex: "z" }, { name: "Michal", count: 88479, sex: "m" },
+    { name: "Milan", count: 83832, sex: "m" }, { name: "Zuzana", count: 83248, sex: "z" },
+    { name: "Eva", count: 82059, sex: "z" }, { name: "Pavol", count: 79544, sex: "m" },
+    { name: "Katarína", count: 78761, sex: "z" }, { name: "František", count: 77446, sex: "m" },
+    { name: "Ladislav", count: 68303, sex: "m" }, { name: "Juraj", count: 67128, sex: "m" },
+    { name: "Alžbeta", count: 66899, sex: "z" }, { name: "Miroslav", count: 66198, sex: "m" },
+    { name: "Marta", count: 61299, sex: "z" }, { name: "Jana", count: 59874, sex: "z" },
+    { name: "Margita", count: 58193, sex: "z" }, { name: "Vladimír", count: 56956, sex: "m" },
+    { name: "Martin", count: 51171, sex: "m" }, { name: "Emília", count: 48147, sex: "z" },
+    { name: "Ondrej", count: 45442, sex: "m" }, { name: "Jaroslav", count: 43741, sex: "m" },
+    { name: "Viera", count: 43065, sex: "z" }, { name: "Anton", count: 41559, sex: "m" },
+    { name: "Andrej", count: 38500, sex: "m" }, { name: "Dušan", count: 35300, sex: "m" },
+    { name: "Ivan", count: 34430, sex: "m" }, { name: "Pavel", count: 34009, sex: "m" },
+    { name: "Stanislav", count: 32962, sex: "m" }, { name: "Marián", count: 32365, sex: "m" },
+    { name: "Terézia", count: 31830, sex: "z" }, { name: "Elena", count: 30662, sex: "z" },
+    { name: "Oľga", count: 30466, sex: "z" }, { name: "Magdaléna", count: 29479, sex: "z" },
+    { name: "Ľubomír", count: 28677, sex: "m" }, { name: "Rudolf", count: 27246, sex: "m" },
+    { name: "Karol", count: 27206, sex: "m" }, { name: "Monika", count: 27049, sex: "z" },
+    { name: "Alena", count: 26718, sex: "z" }, { name: "Irena", count: 26525, sex: "z" },
+    { name: "Gabriela", count: 26026, sex: "z" }, { name: "Ľudmila", count: 25974, sex: "z" },
+    { name: "Júlia", count: 25955, sex: "z" }, { name: "Iveta", count: 24737, sex: "z" },
+    { name: "Veronika", count: 24091, sex: "z" }, { name: "Imrich", count: 22401, sex: "m" },
+    { name: "Július", count: 22250, sex: "m" }, { name: "Tibor", count: 22235, sex: "m" },
+    { name: "Ľudovít", count: 21727, sex: "m" }, { name: "Tomáš", count: 21531, sex: "m" },
+    { name: "Božena", count: 20799, sex: "z" }, { name: "Andrea", count: 19834, sex: "z" },
+    { name: "Daniela", count: 19740, sex: "z" }, { name: "Janka", count: 18863, sex: "z" },
+    { name: "Jolana", count: 18757, sex: "z" }, { name: "Rozália", count: 18491, sex: "z" },
+  ];
+  NAMES.forEach((n, i) => n.rank = i + 1);
+
+  const rowsEl = document.getElementById('rows');
+  const sortEl = document.getElementById('sort');
+  const sexEl  = document.getElementById('sex');
+  const nf = new Intl.NumberFormat('sk-SK');
+  const coll = new Intl.Collator('sk');
+
+  function render() {
+    let list = NAMES.slice();
+    if (sexEl.value !== 'all') list = list.filter(n => n.sex === sexEl.value);
+    if (sortEl.value === 'abc') list.sort((a, b) => coll.compare(a.name, b.name));
+    else list.sort((a, b) => a.rank - b.rank);
+
+    rowsEl.innerHTML = list.map(n =>
+      `<tr><td class="rank">${n.rank}</td><td class="name">${n.name}</td><td class="count">${nf.format(n.count)}</td></tr>`
+    ).join('');
+  }
+
+  sortEl.addEventListener('change', render);
+  sexEl.addEventListener('change', render);
+  render();
+</script>
+</body>
+</html>
