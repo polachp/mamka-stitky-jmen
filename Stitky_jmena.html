@@ -85,7 +85,7 @@
   }
   .reset-link:hover { color: #4b5563; }
 
-  .hint { font-size: 12px; color: #7a828c; width: 100%; margin: 0; }
+  .hint { font-size: 15px; color: #4a5260; width: 100%; margin: 0; line-height: 1.5; }
 
   /* --- Náhled stránky --- */
   .preview-wrap { padding: 24px; display: flex; justify-content: center; }
@@ -149,7 +149,7 @@
 
   <div class="controls">
     <div class="field">
-      <label for="name">Jméno (dvě oddělte ;)</label>
+      <label for="name">Jméno (dvě oddělte ; , .)</label>
       <input id="name" type="text" value="Mária" autocomplete="off" placeholder="Mária  nebo  Mária;Karel">
     </div>
     <div class="field">
@@ -179,7 +179,7 @@
     <button class="btn" onclick="window.print()">Tisk / Uložit PDF</button>
     <a class="btn alt" href="Jmena.html">Seznam jmen</a>
     <button type="button" class="reset-link" id="reset">Reset na výchozí</button>
-    <p class="hint">Můžeš zadat i dvě jména oddělená středníkem (např. „Mária;Karel“) — horní polovina řádků se vyplní prvním, spodní druhým. Sloupce jsou napevno 3. Jméno je vždy na jednom řádku — pokud se nevejde, písmo se automaticky zmenší. „Max. velikost“ je horní hranice, na kterou písmo naroste, když je místa dost. Čárkované rámečky slouží pro stříhání. Tlačítkem otevřeš tisk — vyber „Uložit jako PDF“.</p>
+    <p class="hint">Můžeš zadat i dvě jména oddělená středníkem, čárkou nebo tečkou (např. „Mária;Karel“, „Mária,Karel“ i „Mária.Karel“) — horní polovina řádků se vyplní prvním, spodní druhým. Sloupce jsou napevno 3. Jméno je vždy na jednom řádku — pokud se nevejde, písmo se automaticky zmenší. „Max. velikost“ je horní hranice, na kterou písmo naroste, když je místa dost. Čárkované rámečky slouží pro stříhání. Tlačítkem otevřeš tisk — vyber „Uložit jako PDF“.</p>
   </div>
 
   <div class="preview-wrap">
@@ -229,11 +229,12 @@
     } catch (e) { /* ignoruj poškozená data */ }
   }
 
-  // Rozdělí obsah pole na jména podle ";". Mezery se NEodřezávají (slouží k zarovnání),
-  // jen segmenty tvořené pouze mezerami se zahodí. Vrátí pole 1–2 jmen.
+  // Rozdělí obsah pole na jména podle ";", "," nebo ".". Mezery se NEodřezávají
+  // (slouží k zarovnání), jen segmenty tvořené pouze mezerami se zahodí.
+  // Vrátí pole 1–2 jmen.
   function parseNames() {
     return (nameEl.value || '')
-      .split(';')
+      .split(/[;,.]/)
       .filter(s => s.trim().length > 0)
       .slice(0, 2);
   }
