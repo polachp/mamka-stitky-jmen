@@ -15,6 +15,14 @@ na jednotlivé štítky.
 Funkční. Hlavní deliverable je samostatná HTML aplikace `Stitky_jmena.html` — žádný build,
 žádné závislosti, otevírá se přímo v prohlížeči.
 
+## Nasazení
+
+- **Hosting: GitHub Pages** (ne Vercel). Publikováno z branch `main`, cesta `/`.
+- **Repozitář:** https://github.com/polachp/mamka-stitky-jmen
+- **Živá adresa:** https://polachp.github.io/mamka-stitky-jmen/ — `index.html` přesměruje na
+  `Stitky_jmena.html`, což je vstupní bod aplikace pro uživatele.
+- Aktualizace webu = `git push` na `main`; GitHub Pages nasadí automaticky.
+
 ## Soubory
 
 - `Stitky_jmena.html` — kompletní aplikace (HTML + CSS + JS v jednom souboru).
